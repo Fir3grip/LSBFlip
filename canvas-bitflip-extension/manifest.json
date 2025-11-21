@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "BitFlip Canvas Protector",
+  "version": "1.0",
+  "description": "Injects site-wide canvas fingerprinting protection.",
+  "permissions": ["storage", "scripting", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html" }
+}
