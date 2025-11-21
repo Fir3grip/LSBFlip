@@ -49,7 +49,7 @@ by_bits = df.groupby("bits").agg({
 by_percent.to_csv(os.path.join(RESULTS_DIR, "summary_percentages.csv"), index=False)
 by_bits.to_csv(os.path.join(RESULTS_DIR, "summary_bits.csv"), index=False)
 
-print("✅ Saved:")
+print("Saved:")
 print("  summary_percentages.csv — averages per flip percentage")
 print("  summary_bits.csv — averages per bits flipped")
 
@@ -65,7 +65,7 @@ def plot_line(df, x, y, ylabel, title, filename):
     path = os.path.join(OUT_DIR, filename)
     plt.savefig(path, dpi=200)
     plt.close()
-    print(f"  📈 Saved {path}")
+    print(f"Saved {path}")
 
 # === PLOTS ===
 plot_line(by_percent, "percent", "ssim_vs_baseline",

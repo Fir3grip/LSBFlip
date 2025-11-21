@@ -68,6 +68,6 @@ for col, title in metrics.items():
     plt.savefig(out_path, dpi=200)
     plt.close(fig)
 
-    print(f"✅ Saved {out_path}")
+    print(f"Saved {out_path}")
 
 print("All heatmaps generated in:", OUT_DIR)
