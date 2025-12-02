@@ -1,11 +1,19 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const toggle = document.getElementById("toggle");
+const flipSlider = document.getElementById("flipInterval");
+const noiseSlider = document.getElementById("noiseStrength");
 
-  chrome.storage.local.get("bitflipEnabled", (data) => {
-    toggle.checked = !!data.bitflipEnabled;
-  });
-
-  toggle.addEventListener("change", () => {
-    chrome.storage.local.set({ bitflipEnabled: toggle.checked });
-  });
+chrome.storage.local.get(["flipInterval", "noiseStrength"], (d) => {
+  flipSlider.value = d.flipInterval;
+  noiseSlider.value = d.noiseStrength;
 });
+
+function update() {
+  chrome.storage.local.set({
+    flipInterval: Number(flipSlider.value),
+    noiseStrength: Number(noiseSlider.value)
+  }, () => {
+    chrome.runtime.sendMessage({ type: "settingsChanged" });
+  });
+}
+
+flipSlider.addEventListener("input", update);
+noiseSlider.addEventListener("input", update);

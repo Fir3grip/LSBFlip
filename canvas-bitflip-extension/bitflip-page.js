@@ -1,75 +1,50 @@
-// bitflip-page.js
-/* Runs in real page context. No wrapping <script> tags when stored as a file. */
-console.log('[BitFlip-page] running in page context — patching canvas');
+(function () {
+  console.log("[BitFlip] Canvas protection active.");
 
-// Example patch (replace with your robust bitflip code)
-(function() {
-  const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
-  const origToBlob = HTMLCanvasElement.prototype.toBlob;
-  const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+  let flipInterval = 512;
+  let noiseStrength = 1;
 
-  function mutateBufferBuffer(buf) {
-    try {
-      const bytes = new Uint8Array(buf);
-      // simple deterministic-ish change for demo: flip LSB of every 512th byte
-      for (let i = 0; i < bytes.length; i += 512) {
-        bytes[i] ^= 1;
-      }
-    } catch (e) {
-      // ignore
+  chrome.storage.local.get(["flipInterval", "noiseStrength"], (d) => {
+    flipInterval = d.flipInterval || 512;
+    noiseStrength = d.noiseStrength || 1;
+  });
+
+  // receive updates
+  window.addEventListener("message", (e) => {
+    if (e.data?.type === "bitflipUpdate") {
+      flipInterval = e.data.flipInterval;
+      noiseStrength = e.data.noiseStrength;
+    }
+  });
+
+  function applyBitflip(buffer) {
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.length; i += flipInterval) {
+      bytes[i] ^= noiseStrength;
     }
   }
 
-  HTMLCanvasElement.prototype.toDataURL = function(...args) {
-    // call original to get dataURL, then modify bytes if PNG data
-    try {
-      const dataURL = origToDataURL.apply(this, args);
-      if (typeof dataURL === 'string' && dataURL.startsWith('data:image/png;base64,')) {
-        const b64 = dataURL.split(',')[1];
-        const bin = atob(b64);
-        const buf = new ArrayBuffer(bin.length);
-        const view = new Uint8Array(buf);
-        for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
-        mutateBufferBuffer(buf);
-        // re-encode
-        let out = '';
-        const mutated = new Uint8Array(buf);
-        for (let i = 0; i < mutated.length; i++) out += String.fromCharCode(mutated[i]);
-        return 'data:image/png;base64,' + btoa(out);
-      }
-      return dataURL;
-    } catch (e) {
-      return origToDataURL.apply(this, args);
-    }
+  const origDataURL = HTMLCanvasElement.prototype.toDataURL;
+  HTMLCanvasElement.prototype.toDataURL = function (...args) {
+    let url = origDataURL.apply(this, args);
+    if (!url.startsWith("data:image/png")) return url;
+
+    const b64 = url.split(",")[1];
+    const bin = atob(b64);
+    const buf = new ArrayBuffer(bin.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
+
+    applyBitflip(buf);
+
+    let out = "";
+    const view2 = new Uint8Array(buf);
+    for (let i = 0; i < view2.length; i++)
+      out += String.fromCharCode(view2[i]);
+
+    return "data:image/png;base64," + btoa(out);
   };
 
-  HTMLCanvasElement.prototype.toBlob = function(callback, ...args) {
-    try {
-      return origToBlob.call(this, blob => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const buf = e.target.result;
-          mutateBufferBuffer(buf);
-          const newBlob = new Blob([buf], { type: blob.type });
-          callback(newBlob);
-        };
-        reader.readAsArrayBuffer(blob);
-      }, ...args);
-    } catch (e) {
-      return origToBlob.call(this, callback, ...args);
-    }
-  };
-
-  CanvasRenderingContext2D.prototype.getImageData = function(...args) {
-    const data = origGetImageData.apply(this, args);
-    try {
-      mutateBufferBuffer(data.data.buffer);
-    } catch (e) {}
-    return data;
-  };
-
-  // marker for diagnostics
-  try { window.__bitflip_injected__ = true; } catch(e){}
-  console.log('[BitFlip-page] patch installed');
+  // signal ready
+  window.__bitflip_injected__ = true;
 })();
-

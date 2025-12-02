@@ -2,15 +2,19 @@
 <html>
   <head>
     <style>
-      body { width: 150px; font-family: sans-serif; padding: 10px; }
-      label { display: flex; align-items: center; justify-content: space-between; }
+      body { font-family: sans-serif; width: 220px; }
+      label { display: block; margin-top: 10px; }
     </style>
   </head>
   <body>
     <label>
-      <span>Enable BitFlip</span>
-      <input type="checkbox" id="toggle">
+      Bit-flip interval
+      <input id="flipInterval" type="range" min="32" max="2048" step="32" />
     </label>
+
+    <label>
+      Noise strength
+      <input id="noiseStrength" type="range" min="1" max="8" />
+    </label>
+
     <script src="popup.js"></script>
-  </body>
-</html>
